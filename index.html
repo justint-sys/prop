@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Prop Tracker">
+  <title>Prop Tracker - Payout Management</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;1,400&display=swap');
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    ::-webkit-scrollbar {
+      width: 2px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #2a1f4a;
+      border-radius: 1px;
+    }
+
+    body {
+      font-family: 'Syne', sans-serif;
+      background: #0d0c14;
+      color: #d4cfc8;
+      min-height: 100vh;
+    }
+
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      max-width: 430px;
+      margin: 0 auto;
+      background: #0d0c14;
+    }
+
+    .ob-bg {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background: radial-gradient(ellipse 70% 50% at 85% 5%, rgba(124, 58, 237, 0.09) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 70% at 5% 80%, rgba(76, 29, 149, 0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 100% 30% at 50% 100%, rgba(45, 20, 100, 0.12) 0%, transparent 50%),
+        #0d0c14;
+    }
+
+    .ob-grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0.35;
+      mix-blend-mode: overlay;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    }
+
+    .content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .header {
+      padding: 26px 20px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-left > div:first-child {
+      display: flex;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+
+    .gem {
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      background: #7c3aed;
+      transform: rotate(45deg);
+      border-radius: 1px;
+      margin-right: 6px;
+      box-shadow: 0 0 5px rgba(124, 58, 237, 0.7);
+    }
+
+    .header-title {
+      font-size: 9.5px;
+      letter-spacing: 0.2em;
+      color: #3d3468;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    .header-main {
+      font-family: 'Syne', sans-serif;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      background: linear-gradient(135deg, #d4cfc8 30%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .header-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 13px;
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.2), rgba(76, 29, 149, 0.35));
+      border: 1px solid rgba(138, 92, 246, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 18px rgba(124, 58, 237, 0.15);
+    }
+
+    .scrollable {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 0 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card {
+      background: linear-gradient(145deg, rgba(26, 20, 50, 0.92) 0%, rgba(18, 14, 36, 0.97) 100%);
+      border: 1px solid rgba(138, 92, 246, 0.13);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(138, 92, 246, 0.07);
+      backdrop-filter: blur(8px);
+    }
+
+    .card-glow {
+      background: linear-gradient(145deg, rgba(32, 22, 60, 0.96) 0%, rgba(20, 15, 42, 0.98) 100%);
+      border: 1px solid rgba(138, 92, 246, 0.22);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 0 0 1px rgba(138, 92, 246, 0.06), 0 8px 32px rgba(80, 40, 200, 0.18), inset 0 1px 0 rgba(180, 140, 255, 0.1);
+    }
+
+    .fl {
+      font-size: 9.5px;
+      letter-spacing: 0.18em;
+      color: #3d3468;
+      text-transform: uppercase;
+      margin-bottom: 7px;
+      font-weight: 700;
+      font-family: 'Syne', sans-serif;
+    }
+
+    .fi {
+      width: 100%;
+      background: rgba(12, 9, 26, 0.85);
+      border: 1px solid rgba(138, 92, 246, 0.15);
+      border-radius: 11px;
+      color: #d4cfc8;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      padding: 12px;
+      outline: none;
+      transition: all 0.2s;
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.35);
+    }
+
+    .fi:focus {
+      border-color: rgba(138, 92, 246, 0.5);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.35), 0 0 0 3px rgba(138, 92, 246, 0.07);
+    }
+
+    .fi::placeholder {
+      color: #2e2848;
+    }
+
+    .fi option {
+      background: #14102a;
+    }
+
+    .btn-p {
+      background: linear-gradient(135deg, #7c3aed, #5b21b6);
+      color: #fff;
+      border: none;
+      border-radius: 13px;
+      padding: 15px;
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      width: 100%;
+      letter-spacing: 0.05em;
+      box-shadow: 0 4px 20px rgba(109, 40, 217, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      transition: all 0.2s;
+    }
+
+    .btn-p:active {
+      transform: scale(0.97);
+    }
+
+    .btn-p:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn-g {
+      background: rgba(138, 92, 246, 0.06);
+      color: #7c5cbf;
+      border: 1px solid rgba(138, 92, 246, 0.14);
+      border-radius: 11px;
+      padding: 12px;
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    .btn-g:active {
+      background: rgba(138, 92, 246, 0.15);
+      color: #c4b5fd;
+    }
+
+    .btn-i {
+      background: rgba(138, 92, 246, 0.08);
+      color: #6a4aaa;
+      border: 1px solid rgba(138, 92, 246, 0.13);
+      border-radius: 9px;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .btn-i:active {
+      background: rgba(138, 92, 246, 0.22);
+      color: #c4b5fd;
+    }
+
+    .nav-bar {
+      background: rgba(10, 8, 20, 0.96);
+      border-top: 1px solid rgba(138, 92, 246, 0.1);
+      display: flex;
+      backdrop-filter: blur(20px);
+      padding-bottom: max(6px, env(safe-area-inset-bottom, 6px));
+    }
+
+    .nav-tab {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: #2e2848;
+      font-family: 'Syne', sans-serif;
+      font-size: 9px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 800;
+      cursor: pointer;
+      padding: 10px 4px 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      transition: color 0.2s;
+    }
+
+    .nav-tab.active {
+      color: #a78bfa;
+    }
+
+    .nav-tab.active svg {
+      filter: drop-shadow(0 0 5px rgba(167, 139, 250, 0.55));
+    }
+
+    .split-bar {
+      height: 3px;
+      border-radius: 2px;
+      background: rgba(138, 92, 246, 0.08);
+      overflow: hidden;
+      margin: 8px 0;
+    }
+
+    .split-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: linear-gradient(90deg, #6d28d9, #a78bfa);
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .num-hero {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 34px;
+      font-weight: 500;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .num-mid {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 20px;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+    }
+
+    .num-sm {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+    }
+
+    .firm-chip {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(124, 58, 237, 0.1);
+      border: 1px solid rgba(124, 58, 237, 0.18);
+      border-radius: 20px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: #9a72e0;
+      transition: all 0.15s;
+    }
+
+    .firm-chip.sel {
+      background: rgba(124, 58, 237, 0.24);
+      border-color: rgba(167, 139, 250, 0.5);
+      color: #c4b5fd;
+      box-shadow: 0 0 10px rgba(124, 58, 237, 0.2);
+    }
+
+    .firm-chip:active {
+      transform: scale(0.96);
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .fu {
+      animation: fadeUp 0.3s ease forwards;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+
+    .pls {
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .month-hdr {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      padding: 12px 0 4px;
+      border-bottom: 1px solid rgba(138, 92, 246, 0.08);
+    }
+
+    .yr-hdr {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      color: #5a4a8a;
+      text-transform: uppercase;
+    }
+
+    .entry-row {
+      background: rgba(20, 16, 38, 0.7);
+      border: 1px solid rgba(138, 92, 246, 0.09);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 7px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(8, 6, 20, 0.92);
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+    }
+
+    .modal-content {
+      background: linear-gradient(180deg, #15112a 0%, #0f0c1e 100%);
+      border-radius: 20px 20px 0 0;
+      border: 1px solid rgba(138, 92, 246, 0.2);
+      border-bottom: none;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      box-shadow: 0 -20px 60px rgba(80, 40, 200, 0.2);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 17px;
+      font-weight: 800;
+      color: #c4b5fd;
+    }
+
+    .modal-close {
+      background: rgba(138, 92, 246, 0.1);
+      border: 1px solid rgba(138, 92, 246, 0.18);
+      border-radius: 8px;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      color: #7c5cbf;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 48px 0;
+      color: #2a2248;
+    }
+
+    .empty-icon {
+      font-size: 32px;
+      margin-bottom: 10px;
+      opacity: 0.5;
+    }
+
+    .empty-title {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .empty-subtitle {
+      font-size: 11px;
+      margin-top: 4px;
+      color: #1e1a38;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <div class="ob-bg"></div>
+    <div class="ob-grain"></div>
+
+    <!-- Header -->
+    <div class="content header">
+      <div class="header-left">
+        <div>
+          <span class="gem"></span>
+          <span class="header-title">Prop Firm</span>
+        </div>
+        <div class="header-main">PAYOUTS</div>
+      </div>
+      <div class="header-icon">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+          <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="#a78bfa" stroke-width="1.8" stroke-linejoin="round"/>
+          <path d="M2 17l10 5 10-5" stroke="#a78bfa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 12l10 5 10-5" stroke="#7c3aed" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Scrollable Content -->
+    <div class="scrollable" id="scrollable">
+      <!-- Dashboard View -->
+      <div id="dashboard-view" class="fu">
+        <div class="card-glow">
+          <div class="fl">Total Gross</div>
+          <div class="num-hero" style="color: #c4b5fd; margin: 5px 0 2px" id="total-gross">$0.00</div>
+          <div style="font-size: 11px; color: #3d3468; font-family: 'JetBrains Mono', monospace" id="payout-count">0 payouts</div>
+          <div id="tax-bar" style="display: none;">
+            <div class="split-bar" style="margin-top: 14px">
+              <div class="split-fill" id="tax-fill"></div>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 10px; color: #3d3468; font-family: 'JetBrains Mono', monospace">
+              <span id="keep-pct">keep 70%</span>
+              <span id="tax-pct">tax 30%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="this-month-card" style="display: none;">
+          <div class="fl">This Month</div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px">
+            <div class="num-mid" style="color: #c4b5fd" id="month-gross">$0.00</div>
+            <div style="font-size: 11px; color: #3d3468; font-family: 'JetBrains Mono', monospace" id="month-count">0× payouts</div>
+          </div>
+        </div>
+
+        <div class="card" id="by-firm-card" style="display: none;">
+          <div class="fl" style="margin-bottom: 12px">By Firm</div>
+          <div id="firm-totals"></div>
+        </div>
+
+        <div class="empty-state" id="empty-dashboard">
+          <div class="empty-icon">◈</div>
+          <div class="empty-title">No payouts yet</div>
+          <div class="empty-subtitle">Tap + to log your first</div>
+        </div>
+      </div>
+
+      <!-- Add View -->
+      <div id="add-view" class="hidden fu">
+        <div style="font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; margin: 5px 0 0; color: #c4b5fd">Log Payout</div>
+
+        <div>
+          <div class="fl">Amount ($)</div>
+          <input class="fi" type="number" inputMode="decimal" placeholder="0.00" id="amount-input" style="font-size: 22px" autofocus/>
+        </div>
+
+        <div id="preview-card" class="card" style="padding: 11px 13px; display: none;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 5px">
+            <span style="font-size: 10px; color: #3d3468; font-family: 'JetBrains Mono', monospace">you keep</span>
+            <span class="num-sm" style="color: #c4b5fd" id="preview-keep">$0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between">
+            <span style="font-size: 10px; color: #3d3468; font-family: 'JetBrains Mono', monospace" id="tax-label">tax reserve (30%)</span>
+            <span class="num-sm" style="color: #f87171" id="preview-tax">$0.00</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="fl">Firm</div>
+          <div id="firm-select"></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div><div class="fl">Date</div><input class="fi" type="date" id="date-input"/></div>
+          <div><div class="fl">Note</div><input class="fi" type="text" placeholder="optional" id="note-input"/></div>
+        </div>
+
+        <button class="btn-p" id="add-payout-btn" onclick="addPayment()">Add Payout</button>
+        <button class="btn-g" onclick="switchView('dashboard')">Cancel</button>
+      </div>
+
+      <!-- History View -->
+      <div id="history-view" class="hidden fu"></div>
+
+      <!-- Settings View -->
+      <div id="settings-view" class="hidden fu">
+        <div style="font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 800; margin: 5px 0 0; color: #c4b5fd">Settings</div>
+
+        <div class="card">
+          <div class="fl">Tax Reserve Rate</div>
+          <div id="tax-edit-mode">
+            <div style="display: flex; justify-content: space-between; align-items: center">
+              <div style="font-family: 'JetBrains Mono', monospace; font-size: 36px; font-weight: 400; color: #a78bfa">
+                <span id="tax-display">30</span><span style="font-size: 18px; color: #4a3a6a">%</span>
+              </div>
+              <button class="btn-g" onclick="toggleTaxEdit()" style="width: auto; padding: 9px 16px">Edit</button>
+            </div>
+          </div>
+          <div id="tax-input-mode" style="display: none;">
+            <div style="display: flex; gap: 8px; align-items: center">
+              <input class="fi" type="number" inputMode="numeric" min="0" max="100" id="tax-input" style="flex: 1" />
+              <span style="color: #4a3a6a; font-family: 'JetBrains Mono', monospace; font-size: 16px">%</span>
+              <button class="btn-p" onclick="saveTaxRate()" style="width: auto; padding: 11px 16px; font-size: 13px">Save</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px">
+            <div class="fl" style="margin: 0">My Firms</div>
+            <button class="btn-i" onclick="toggleAddFirm()">
+              <svg width="13" height="13" fill="none" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+
+          <div id="firm-input-area" style="display: none; margin-bottom: 12px">
+            <div style="display: flex; gap: 8px">
+              <input class="fi" type="text" placeholder="Firm name…" id="firm-name-input" style="flex: 1" />
+              <button class="btn-p" onclick="addFirm()" style="width: auto; padding: 0 14px; font-size: 13px">Add</button>
+            </div>
+          </div>
+
+          <div id="firms-list"></div>
+        </div>
+
+        <div class="card">
+          <div class="fl" style="margin-bottom: 10px">All-Time</div>
+          <div id="summary-stats"></div>
+        </div>
+
+        <button class="btn-g" id="clear-all-btn" style="color: #f87171; border-color: rgba(248, 113, 113, 0.18); display: none" onclick="clearAllPayouts()">Clear All Payouts</button>
+      </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="content nav-bar">
+      <button class="nav-tab active" data-view="dashboard" onclick="switchView('dashboard')">
+        <svg width="21" height="21" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2.5" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="3" width="7" height="7" rx="2.5" stroke="currentColor" stroke-width="1.7"/><rect x="3" y="14" width="7" height="7" rx="2.5" stroke="currentColor" stroke-width="1.7"/><rect x="14" y="14" width="7" height="7" rx="2.5" stroke="currentColor" stroke-width="1.7"/></svg>
+        Overview
+      </button>
+      <button class="nav-tab" data-view="add" onclick="switchView('add')">
+        <svg width="21" height="21" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="M12 8v8M8 12h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        Add
+      </button>
+      <button class="nav-tab" data-view="history" onclick="switchView('history')">
+        <svg width="21" height="21" fill="none" viewBox="0 0 24 24"><path d="M12 8v4l3 3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M3.05 11a9 9 0 1 0 .5-3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M3 5v4h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        History
+      </button>
+      <button class="nav-tab" data-view="settings" onclick="switchView('settings')">
+        <svg width="21" height="21" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="1.7"/></svg>
+        Settings
+      </button>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="edit-modal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span class="modal-title">Edit Payout</span>
+          <button class="modal-close" onclick="closeEditModal()">✕</button>
+        </div>
+        <div>
+          <div class="fl">Amount ($)</div>
+          <input class="fi" type="number" inputMode="decimal" id="edit-amount" />
+        </div>
+        <div>
+          <div class="fl">Firm</div>
+          <div id="edit-firm-select" style="display: flex; flex-wrap: wrap; gap: 8px"></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px">
+          <div><div class="fl">Date</div><input class="fi" type="date" id="edit-date" /></div>
+          <div><div class="fl">Note</div><input class="fi" type="text" placeholder="optional" id="edit-note" /></div>
+        </div>
+        <button class="btn-p" onclick="saveEdit()">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    // LocalStorage helpers
+    const $ = (k, fb) => {
+      try {
+        const v = localStorage.getItem(k);
+        return v !== null ? JSON.parse(v) : fb;
+      } catch {
+        return fb;
+      }
+    };
+
+    const $set = (k, v) => {
+      try {
+        localStorage.setItem(k, JSON.stringify(v));
+      } catch {}
+    };
+
+    const fc = (v) =>
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+      }).format(v || 0);
+
+    const fd = (iso) => {
+      try {
+        return new Date(iso + "T12:00:00").toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
+      } catch {
+        return iso;
+      }
+    };
+
+    // State
+    let payments = $("pp_v3_pay", []);
+    let firms = $("pp_v3_firms", []);
+    let taxRate = $("pp_v3_tax", 0.3);
+    let currentView = "dashboard";
+    let editingId = null;
+    let activeMonths = {};
+
+    // Initialize
+    function init() {
+      setToday();
+      updateDashboard();
+      renderFirmSelect();
+      renderFirmsList();
+      updateSummary();
+    }
+
+    function setToday() {
+      const today = new Date().toISOString().split("T")[0];
+      document.getElementById("date-input").value = today;
+    }
+
+    function switchView(view) {
+      currentView = view;
+      document.querySelectorAll("[id$='-view']").forEach((el) => el.classList.add("hidden"));
+      document.getElementById(`${view}-view`).classList.remove("hidden");
+      document.querySelectorAll(".nav-tab").forEach((btn) => btn.classList.remove("active"));
+      document.querySelector(`[data-view="${view}"]`).classList.add("active");
+
+      if (view === "history") renderHistory();
+      if (view === "add") document.getElementById("amount-input").focus();
+    }
+
+    function formatCurrency(v) {
+      return fc(v);
+    }
+
+    // Dashboard
+    function updateDashboard() {
+      const totalGross = payments.reduce((s, p) => s + p.amount, 0);
+      const totalTax = totalGross * taxRate;
+      const totalNet = totalGross - totalTax;
+      const thisMonth = new Date().toISOString().slice(0, 7);
+      const monthGross = payments.filter((p) => p.date.startsWith(thisMonth)).reduce((s, p) => s + p.amount, 0);
+
+      document.getElementById("total-gross").textContent = fc(totalGross);
+      document.getElementById("payout-count").textContent = `${payments.length} payout${payments.length !== 1 ? "s" : ""} logged`;
+
+      if (totalGross > 0) {
+        document.getElementById("tax-bar").style.display = "block";
+        document.getElementById("tax-fill").style.width = `${(1 - taxRate) * 100}%`;
+        document.getElementById("keep-pct").textContent = `keep ${((1 - taxRate) * 100).toFixed(0)}%`;
+        document.getElementById("tax-pct").textContent = `tax ${(taxRate * 100).toFixed(0)}%`;
+      }
+
+      if (monthGross > 0) {
+        document.getElementById("this-month-card").style.display = "block";
+        document.getElementById("month-gross").textContent = fc(monthGross);
+        document.getElementById("month-count").textContent = `${payments.filter((p) => p.date.startsWith(thisMonth)).length}× payouts`;
+      } else {
+        document.getElementById("this-month-card").style.display = "none";
+      }
+
+      // By firm
+      const firmTotals = firms
+        .map((f) => ({
+          ...f,
+          total: payments.filter((p) => p.firmId === f.id).reduce((s, p) => s + p.amount, 0),
+          count: payments.filter((p) => p.firmId === f.id).length,
+        }))
+        .filter((f) => f.total > 0)
+        .sort((a, b) => b.total - a.total);
+
+      if (firmTotals.length > 0) {
+        document.getElementById("by-firm-card").style.display = "block";
+        let html = "";
+        firmTotals.forEach((f) => {
+          const pct = totalGross > 0 ? (f.total / totalGross) * 100 : 0;
+          html += `
+            <div style="margin-bottom: 10px">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 4px">
+                <span style="font-size: 12px; color: #9c8ac8; font-weight: 700">${f.name}</span>
+                <span class="num-sm" style="color: #d4cfc8">${fc(f.total)}</span>
+              </div>
+              <div class="split-bar" style="margin: 0">
+                <div class="split-fill" style="width: ${pct}%; opacity: 0.5"></div>
+              </div>
+            </div>
+          `;
+        });
+        document.getElementById("firm-totals").innerHTML = html;
+      } else {
+        document.getElementById("by-firm-card").style.display = "none";
+      }
+
+      if (payments.length === 0) {
+        document.getElementById("empty-dashboard").style.display = "block";
+      } else {
+        document.getElementById("empty-dashboard").style.display = "none";
+      }
+    }
+
+    // Add Payout
+    document.getElementById("amount-input").addEventListener("input", function () {
+      const amt = parseFloat(this.value) || 0;
+      if (amt > 0) {
+        document.getElementById("preview-card").style.display = "block";
+        document.getElementById("preview-keep").textContent = fc(amt * (1 - taxRate));
+        document.getElementById("preview-tax").textContent = fc(amt * taxRate);
+        document.getElementById("tax-label").textContent = `tax reserve (${(taxRate * 100).toFixed(0)}%)`;
+      } else {
+        document.getElementById("preview-card").style.display = "none";
+      }
+    });
+
+    function renderFirmSelect() {
+      const html =
+        firms.length === 0
+          ? '<div style="font-size: 12px; color: #3d3468; padding: 8px 0">Add firms in Settings first.</div>'
+          : `<div style="display: flex; flex-wrap: wrap; gap: 7px">
+        ${firms.map((f) => `<button class="firm-chip" onclick="selectFirm('${f.id}')">${f.name}</button>`).join("")}
+      </div>`;
+      document.getElementById("firm-select").innerHTML = html;
+      if (firms.length > 0) selectFirm(firms[0].id);
+    }
+
+    let selectedFirmId = "";
+    function selectFirm(id) {
+      selectedFirmId = id;
+      document.querySelectorAll("#firm-select .firm-chip").forEach((btn) => btn.classList.remove("sel"));
+      event?.target?.classList.add("sel");
+    }
+
+    function addPayment() {
+      const amt = parseFloat(document.getElementById("amount-input").value);
+      const date = document.getElementById("date-input").value;
+      const note = document.getElementById("note-input").value;
+
+      if (!amt || amt <= 0 || !selectedFirmId) return;
+
+      const firm = firms.find((f) => f.id === selectedFirmId);
+      payments.unshift({
+        id: Date.now().toString(),
+        amount: amt,
+        firmId: selectedFirmId,
+        firmName: firm?.name || "Unknown",
+        note,
+        date,
+      });
+
+      $set("pp_v3_pay", payments);
+      document.getElementById("amount-input").value = "";
+      document.getElementById("note-input").value = "";
+      document.getElementById("preview-card").style.display = "none";
+      switchView("dashboard");
+      updateDashboard();
+    }
+
+    // History
+    function renderHistory() {
+      const byYear = {};
+      payments.forEach((p) => {
+        const [y, m] = p.date.split("-");
+        const yr = parseInt(y);
+        const mo = parseInt(m) - 1;
+        if (!byYear[yr]) byYear[yr] = Array.from({ length: 12 }, () => []);
+        byYear[yr][mo].push(p);
+      });
+
+      const years = Object.keys(byYear)
+        .map(Number)
+        .sort((a, b) => b - a);
+
+      let html = "";
+      if (years.length === 0) {
+        html = `<div class="empty-state"><div class="empty-icon">◈</div><div class="empty-title">No payouts yet</div></div>`;
+      } else {
+        years.forEach((yr) => {
+          const monthTotals = Array.from({ length: 12 }, (_, i) => {
+            const ps = (byYear[yr] || Array.from({ length: 12 }, () => []))[i] || [];
+            const gross = ps.reduce((s, p) => s + p.amount, 0);
+            return { gross, keep: gross * (1 - taxRate), tax: gross * taxRate, count: ps.length };
+          });
+
+          const yearGross = monthTotals.reduce((s, m) => s + m.gross, 0);
+          const yearKeep = yearGross * (1 - taxRate);
+          const yearTax = yearGross * taxRate;
+
+          html += `
+            <div style="display: flex; align-items: center; gap: 8px; margin: 18px 0 10px">
+              <span class="gem"></span>
+              <span class="yr-hdr">${yr}</span>
+              <div style="flex: 1; height: 1px; background: rgba(138, 92, 246, 0.1)"></div>
+            </div>
+            <div class="card-glow" style="padding: 14px 10px 10px">
+              <div style="font-size: 9.5px; letter-spacing: 0.16em; color: #3d3468; text-transform: uppercase; font-weight: 800; margin-bottom: 4px; font-family: 'Syne', sans-serif; padding-left: 6px">
+                ${yr} · Neural Map
+              </div>
+              <svg width="100%" height="auto" viewBox="0 0 320 210" style="max-width: 100%">
+                <!-- Placeholder for graph -->
+              </svg>
+              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(138, 92, 246, 0.08)">
+                <div style="background: rgba(12, 9, 26, 0.6); border-radius: 9px; padding: 8px 10px">
+                  <div style="font-size: 8.5px; color: #3d3468; letter-spacing: 0.14em; font-family: 'Syne', sans-serif; font-weight: 800; margin-bottom: 3px">GROSS</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #c4b5fd; line-height: 1">${fc(yearGross)}</div>
+                </div>
+                <div style="background: rgba(12, 9, 26, 0.6); border-radius: 9px; padding: 8px 10px">
+                  <div style="font-size: 8.5px; color: #3d3468; letter-spacing: 0.14em; font-family: 'Syne', sans-serif; font-weight: 800; margin-bottom: 3px">KEEP</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #86efac; line-height: 1">${fc(yearKeep)}</div>
+                </div>
+                <div style="background: rgba(12, 9, 26, 0.6); border-radius: 9px; padding: 8px 10px">
+                  <div style="font-size: 8.5px; color: #3d3468; letter-spacing: 0.14em; font-family: 'Syne', sans-serif; font-weight: 800; margin-bottom: 3px">TAX</div>
+                  <div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #f87171; line-height: 1">${fc(yearTax)}</div>
+                </div>
+              </div>
+            </div>
+          `;
+
+          monthTotals.forEach((mt, mi) => {
+            if (mt.count === 0) return;
+            const monthPayments = (byYear[yr] || [])[mi] || [];
+            const isOpen = activeMonths[`${yr}-${mi}`];
+
+            html += `
+              <div class="card" style="padding: 0 14px">
+                <div class="month-hdr" onclick="toggleMonth('${yr}-${mi}')">
+                  <div style="display: flex; align-items: center; gap: 8px">
+                    <div style="width: 7px; height: 7px; border-radius: 50%; background: #7c3aed; box-shadow: 0 0 6px rgba(124, 58, 237, 0.6)" class="pls"></div>
+                    <span style="font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px; color: #c4b5fd">${MONTHS[mi]}</span>
+                    <span style="font-size: 10px; color: #3d3468; font-family: 'JetBrains Mono', monospace">${mt.count}×</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 10px">
+                    <span class="num-sm" style="color: #d4cfc8">${fc(mt.gross)}</span>
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" style="transform: ${isOpen ? "rotate(180deg)" : "none"}; transition: transform 0.2s; color: #4a3a6a">
+                      <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                  </div>
+                </div>
+                ${
+                  isOpen
+                    ? `
+                  <div style="padding-bottom: 12px">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0 12px">
+                      <div style="background: rgba(134, 239, 172, 0.05); border: 1px solid rgba(134, 239, 172, 0.1); border-radius: 10px; padding: 8px 10px">
+                        <div style="font-size: 9px; color: #3d3468; letter-spacing: 0.14em; font-family: 'Syne', sans-serif; font-weight: 800; margin-bottom: 3px">KEEP</div>
+                        <div class="num-sm" style="color: #86efac">${fc(mt.keep)}</div>
+                      </div>
+                      <div style="background: rgba(248, 113, 113, 0.05); border: 1px solid rgba(248, 113, 113, 0.1); border-radius: 10px; padding: 8px 10px">
+                        <div style="font-size: 9px; color: #3d3468; letter-spacing: 0.14em; font-family: 'Syne', sans-serif; font-weight: 800; margin-bottom: 3px">TAX</div>
+                        <div class="num-sm" style="color: #f87171">${fc(mt.tax)}</div>
+                      </div>
+                    </div>
+                    ${monthPayments
+                      .sort((a, b) => b.date.localeCompare(a.date))
+                      .map(
+                        (p) => `
+                      <div class="entry-row">
+                        <div style="flex: 1; min-width: 0">
+                          <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 3px">
+                            <span class="num-sm" style="color: #c4b5fd">${fc(p.amount)}</span>
+                            <span style="font-size: 10px; color: #4a3a6a; font-family: 'JetBrains Mono', monospace">${p.firmName}</span>
+                          </div>
+                          <div style="font-size: 10px; color: #2e2848; font-family: 'JetBrains Mono', monospace">
+                            ${fd(p.date)}${p.note ? ` · ${p.note}` : ""}
+                          </div>
+                        </div>
+                        <div style="display: flex; gap: 6px">
+                          <button class="btn-i" onclick="openEdit('${p.id}')" title="Edit">
+                            <svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          </button>
+                          <button class="btn-i" onclick="deletePayment('${p.id}')" title="Delete">
+                            <svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                          </button>
+                        </div>
+                      </div>
+                    `
+                      )
+                      .join("")}
+                  </div>
+                `
+                    : ""
+                }
+              </div>
+            `;
+          });
+        });
+      }
+
+      document.getElementById("history-view").innerHTML = html;
+    }
+
+    function toggleMonth(key) {
+      activeMonths[key] = !activeMonths[key];
+      renderHistory();
+    }
+
+    // Edit
+    function openEdit(id) {
+      const p = payments.find((x) => x.id === id);
+      if (!p) return;
+      editingId = id;
+
+      document.getElementById("edit-amount").value = p.amount;
+      document.getElementById("edit-date").value = p.date;
+      document.getElementById("edit-note").value = p.note || "";
+
+      let html = "";
+      firms.forEach((f) => {
+        html += `
+          <button class="firm-chip${f.id === p.firmId ? " sel" : ""}" onclick="selectEditFirm('${f.id}')">
+            ${f.name}
+          </button>
+        `;
+      });
+      document.getElementById("edit-firm-select").innerHTML = html;
+
+      document.getElementById("edit-modal").classList.remove("hidden");
+      document.getElementById("edit-amount").focus();
+    }
+
+    function closeEditModal() {
+      document.getElementById("edit-modal").classList.add("hidden");
+      editingId = null;
+    }
+
+    let editFirmId = "";
+    function selectEditFirm(id) {
+      editFirmId = id;
+      document.querySelectorAll("#edit-firm-select .firm-chip").forEach((btn) => btn.classList.remove("sel"));
+      event?.target?.classList.add("sel");
+    }
+
+    function saveEdit() {
+      if (!editingId) return;
+      const idx = payments.findIndex((p) => p.id === editingId);
+      if (idx < 0) return;
+
+      const firm = firms.find((f) => f.id === editFirmId);
+      payments[idx] = {
+        ...payments[idx],
+        amount: parseFloat(document.getElementById("edit-amount").value),
+        date: document.getElementById("edit-date").value,
+        note: document.getElementById("edit-note").value,
+        firmId: editFirmId,
+        firmName: firm?.name || "Unknown",
+      };
+
+      $set("pp_v3_pay", payments);
+      closeEditModal();
+      updateDashboard();
+      renderHistory();
+    }
+
+    function deletePayment(id) {
+      if (!confirm("Delete this payout?")) return;
+      payments = payments.filter((p) => p.id !== id);
+      $set("pp_v3_pay", payments);
+      updateDashboard();
+      renderHistory();
+    }
+
+    // Firms
+    function renderFirmsList() {
+      let html = "";
+      if (firms.length === 0) {
+        html = '<div style="font-size: 12px; color: #2e2848; text-align: center; padding: 10px 0">No firms yet.</div>';
+      } else {
+        firms.forEach((f) => {
+          const count = payments.filter((p) => p.firmId === f.id).length;
+          html += `
+            <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(124, 58, 237, 0.06); border-radius: 10px; padding: 9px 13px; border: 1px solid rgba(124, 58, 237, 0.1); margin-bottom: 7px">
+              <span style="font-size: 13px; color: #a78bfa; font-weight: 700">${f.name}</span>
+              <div style="display: flex; align-items: center; gap: 10px">
+                <span style="font-size: 10px; color: #2e2848; font-family: 'JetBrains Mono', monospace">${count} payouts</span>
+                <button onclick="deleteFirm('${f.id}')" style="background: none; border: none; color: #2e2848; cursor: pointer; font-size: 14px; padding: 2px 4px; border-radius: 4px; transition: color 0.15s">✕</button>
+              </div>
+            </div>
+          `;
+        });
+      }
+      document.getElementById("firms-list").innerHTML = html;
+    }
+
+    function toggleAddFirm() {
+      document.getElementById("firm-input-area").style.display =
+        document.getElementById("firm-input-area").style.display === "none" ? "flex" : "none";
+      if (document.getElementById("firm-input-area").style.display !== "none") {
+        document.getElementById("firm-name-input").focus();
+      }
+    }
+
+    function addFirm() {
+      const name = document.getElementById("firm-name-input").value.trim();
+      if (!name || firms.find((f) => f.name.toLowerCase() === name.toLowerCase())) {
+        document.getElementById("firm-name-input").value = "";
+        return;
+      }
+
+      const nf = { id: Date.now().toString(), name };
+      firms.push(nf);
+      $set("pp_v3_firms", firms);
+      document.getElementById("firm-name-input").value = "";
+      renderFirmsList();
+      renderFirmSelect();
+      renderEditFirmSelect();
+    }
+
+    function deleteFirm(id) {
+      if (!confirm("Delete this firm? Payouts will remain.")) return;
+      firms = firms.filter((f) => f.id !== id);
+      $set("pp_v3_firms", firms);
+      renderFirmsList();
+      renderFirmSelect();
+    }
+
+    function renderEditFirmSelect() {
+      let html = "";
+      firms.forEach((f) => {
+        html += `<button class="firm-chip" onclick="selectEditFirm('${f.id}')">${f.name}</button>`;
+      });
+      document.getElementById("edit-firm-select").innerHTML = html;
+    }
+
+    // Tax
+    function toggleTaxEdit() {
+      document.getElementById("tax-edit-mode").style.display = "none";
+      document.getElementById("tax-input-mode").style.display = "block";
+      document.getElementById("tax-input").value = (taxRate * 100).toFixed(0);
+      document.getElementById("tax-input").focus();
+    }
+
+    function saveTaxRate() {
+      const v = parseFloat(document.getElementById("tax-input").value);
+      if (!isNaN(v) && v >= 0 && v <= 100) {
+        taxRate = v / 100;
+        $set("pp_v3_tax", taxRate);
+        document.getElementById("tax-display").textContent = (taxRate * 100).toFixed(0);
+        updateDashboard();
+      }
+      document.getElementById("tax-edit-mode").style.display = "block";
+      document.getElementById("tax-input-mode").style.display = "none";
+    }
+
+    // Summary
+    function updateSummary() {
+      const totalGross = payments.reduce((s, p) => s + p.amount, 0);
+      const totalTax = totalGross * taxRate;
+      const totalNet = totalGross - totalTax;
+
+      const stats = [
+        ["Payouts", payments.length],
+        ["Gross", fc(totalGross)],
+        ["Keep", fc(totalNet)],
+        ["Tax Reserve", fc(totalTax)],
+      ];
+
+      let html = "";
+      stats.forEach(([l, v]) => {
+        html += `
+          <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; border-bottom: 1px solid rgba(138, 92, 246, 0.06)">
+            <span style="color: #2e2848; font-family: 'JetBrains Mono', monospace">${l}</span>
+            <span style="color: #d4cfc8; font-family: 'JetBrains Mono', monospace">${v}</span>
+          </div>
+        `;
+      });
+
+      document.getElementById("summary-stats").innerHTML = html;
+
+      if (payments.length > 0) {
+        document.getElementById("clear-all-btn").style.display = "block";
+      } else {
+        document.getElementById("clear-all-btn").style.display = "none";
+      }
+    }
+
+    function clearAllPayouts() {
+      if (!confirm("Clear ALL payout data? This cannot be undone.")) return;
+      payments = [];
+      $set("pp_v3_pay", payments);
+      updateDashboard();
+      updateSummary();
+      switchView("dashboard");
+    }
+
+    // Initialize on load
+    window.addEventListener("load", init);
+  </script>
+</body>
+</html>
